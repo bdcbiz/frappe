@@ -179,6 +179,13 @@ def new_site(
 	help="Ignore the validations and downgrade warnings. This action is not recommended",
 )
 @click.option("--encryption-key", help="Backup encryption key")
+@click.option(
+	"--mariadb-user-host-login-scope",
+	type=click.Choice(["%"]),
+	default=None,
+	expose_value=False,
+	help="Legacy Agent compatibility; accepted but ignored; grant scope unchanged.",
+)
 @pass_context
 def restore(
 	context: CliCtxObj,
