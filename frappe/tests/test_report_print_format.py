@@ -115,6 +115,19 @@ class TestDownloadReportPdf(IntegrationTestCase):
 		frappe.set_user(REPORT_USER)
 		self.addCleanup(frappe.set_user, "Administrator")
 
+	def test_report_download_uses_supported_wkhtmltopdf_options(self):
+		from frappe.utils.print_format import _pdf_bypass_proxy_hosts
+
+		with patch("frappe.utils.print_format.get_pdf", return_value=b"%PDF") as render:
+			download_report_pdf("ToDo", no_letterhead=1, orientation="Landscape")
+		options = render.call_args.args[1]
+		self.assertEqual(options["orientation"], "Landscape")
+		self.assertEqual(options["proxy"], "http://0.0.0.0:0")
+		self.assertEqual(options["bypass-proxy-for"], _pdf_bypass_proxy_hosts())
+		self.assertTrue(render.call_args.kwargs["smart_shrinking"])
+		self.assertNotIn("block-external-requests", options)
+		self.assertNotIn("shrink-to-fit", options)
+
 	def printed_html(self, **kwargs):
 		with patch("frappe.utils.print_format.get_pdf", return_value=b"%PDF") as get_pdf:
 			download_report_pdf("ToDo", no_letterhead=1, **kwargs)
