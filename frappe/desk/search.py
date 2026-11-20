@@ -84,6 +84,8 @@ def get_image_field(doctype: str) -> str | None:
 	df = meta.get_field(meta.image_field)
 	if not df or getattr(df, "is_virtual", False):
 		return None
+	if meta.image_field not in get_permitted_fields(doctype, ignore_virtual=True):
+		return None
 	# don't return an image field the user can't read
 	if df.permlevel and df.permlevel not in meta.get_permlevel_access("read"):
 		return None
@@ -96,14 +98,15 @@ def add_images(rows: list[LinkSearchResults], doctype: str) -> None:
 	if not image_field or not rows:
 		return
 	# a Link field may list records outside the user's permissions; their images stay hidden
-	images = dict(
-		frappe.get_list(
+	images = {
+		record["name"]: record.get(image_field)
+		for record in frappe.get_list(
 			doctype,
 			filters={"name": ["in", [r["value"] for r in rows]]},
 			fields=["name", image_field],
-			as_list=True,
+			as_list=False,
 		)
-	)
+	}
 	for row in rows:
 		image = images.get(row["value"])
 		if image:
